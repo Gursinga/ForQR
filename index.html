@@ -1,0 +1,902 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ForQR v4.8</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{--bg:#080d19;--panel:#111a2b;--panel2:#172238;--border:#26344c;--text:#edf3ff;--muted:#8fa0bb;--accent:#65a5ff;--green:#48d6a0}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:Arial,sans-serif;min-height:100vh;padding:28px 16px}
+button,input,select,textarea{font:inherit}
+.app{max-width:1000px;margin:auto}
+header{margin-bottom:25px}
+.logo{font-size:27px;font-weight:800;letter-spacing:-1px}
+.logo span{color:var(--accent)}
+.version{display:inline-block;font-size:11px;color:var(--green);background:#15382f;padding:5px 9px;border-radius:20px;margin-left:7px;vertical-align:middle}
+.subtitle{color:var(--muted);margin-top:7px;font-size:13px}
+.layout{display:grid;grid-template-columns:1fr .9fr;gap:20px;align-items:start}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:17px;padding:20px;min-width:0}
+.section-title{font-size:15px;font-weight:700;margin-bottom:16px}
+.field{margin-bottom:16px}
+.field label{display:block;color:#c6d2e7;font-size:12px;font-weight:600;margin-bottom:8px}
+textarea,select,input[type="text"],input[type="password"],input[type="email"],input[type="tel"]{width:100%;color:var(--text);background:var(--panel2);border:1px solid var(--border);border-radius:9px;padding:11px 12px;outline:none}
+textarea{resize:vertical;min-height:85px;line-height:1.5}
+textarea:focus,select:focus,input:focus{border-color:var(--accent)}
+select{cursor:pointer}
+input[type="color"]{width:42px;height:35px;border:1px solid var(--border);border-radius:8px;background:var(--panel2);padding:3px;cursor:pointer}
+input[type="range"]{width:100%;accent-color:var(--accent);cursor:pointer}
+.range-row,.preview-top,.export-heading{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.value{color:var(--accent);font-size:12px;font-weight:700}
+.color-row{display:flex;align-items:center;gap:11px}
+.color-value{color:var(--muted);font-size:12px}
+.two-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:13px;color:#c6d2e7}
+.toggle-row input{width:17px;height:17px;accent-color:var(--accent)}
+.file-input{width:100%;color:var(--muted);font-size:12px}
+.file-input::file-selector-button{background:var(--panel2);color:var(--text);border:1px solid var(--border);padding:8px 11px;border-radius:7px;margin-right:9px;cursor:pointer}
+.btn{border:0;border-radius:9px;padding:11px 14px;font-size:13px;font-weight:700;cursor:pointer;transition:.2s}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-primary{background:var(--accent);color:#071225}
+.btn-primary:hover:not(:disabled){background:#8bbaff}
+.btn-secondary{background:var(--panel2);color:var(--text);border:1px solid var(--border)}
+.btn-secondary:hover:not(:disabled){border-color:var(--accent)}
+.button-row{display:flex;gap:9px;margin-top:16px}
+.button-row .btn{flex:1}
+.generate-btn{width:100%;margin-top:5px;padding:13px}
+.preview-panel{position:sticky;top:18px}
+.status{font-size:11px;font-weight:700;padding:6px 9px;border-radius:20px;color:var(--green);background:#15382f}
+.status.stale{color:#ffc76b;background:#3b2e19}
+.preview-canvas{background:#202c40;min-height:360px;border-radius:13px;display:flex;align-items:center;justify-content:center;padding:20px;overflow:hidden;background-size:cover;background-position:center}
+.frame{background:white;padding:18px;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 12px 35px rgba(0,0,0,.28);max-width:100%;position:relative}
+.frame.square{border-radius:0}
+.frame.rounded{border-radius:23px}
+.qr-white-space{background:white;padding:10px;display:flex;align-items:center;justify-content:center;max-width:100%}
+#qrcode{display:flex;align-items:center;justify-content:center;background:white;max-width:100%}
+#qrcode canvas,#qrcode img{display:block;max-width:100%;height:auto}
+.stale-overlay{display:none;position:absolute;inset:0;background:rgba(8,13,25,.76);color:#ffd17e;font-size:13px;font-weight:700;align-items:center;justify-content:center;text-align:center;padding:20px;border-radius:inherit;z-index:2}
+.frame.stale .stale-overlay{display:flex}
+.preview-hint{text-align:center;color:var(--muted);font-size:11px;margin-top:12px;line-height:1.5}
+.divider{height:1px;background:var(--border);margin:19px 0}
+.export-heading{margin-bottom:14px}
+.export-heading h3{font-size:14px}
+.export-heading span{color:var(--green);font-size:10px;background:#15382f;padding:5px 8px;border-radius:20px}
+.export-buttons{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.export-buttons .btn{min-height:45px}
+.export-note{color:var(--muted);font-size:11px;line-height:1.5;margin-top:11px}
+.type-description{color:var(--muted);font-size:11px;line-height:1.5;margin-top:7px}
+.info-note{background:#172238;border:1px solid #30415d;border-radius:9px;padding:10px 11px;color:#b8c8df;font-size:11px;line-height:1.5;margin:0 0 15px}
+.phone-row{display:grid;grid-template-columns:minmax(135px,.85fr) 1.4fr;gap:10px}
+.phone-row .field{min-width:0}
+.custom-code{margin-top:10px}
+.hidden{display:none!important}
+footer{color:#62738e;text-align:center;font-size:11px;margin-top:25px}
+@media(max-width:760px){body{padding:20px 12px}.layout{grid-template-columns:1fr}.preview-panel{position:static}.panel{padding:16px}.preview-canvas{min-height:300px}}
+@media(max-width:380px){.export-buttons,.two-fields,.phone-row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+    <div class="logo">For<span>QR</span><span class="version">v4.8</span></div>
+    <p class="subtitle">Create smart QR codes with multiple content types.</p>
+</header>
+
+<main class="layout">
+<section class="panel">
+    <h2 class="section-title">QR Settings</h2>
+
+    <div class="field">
+        <label for="qrType">QR Type</label>
+        <select id="qrType">
+            <option value="text">URL / Text</option>
+            <option value="wifi">Wi-Fi</option>
+            <option value="email">Email Draft</option>
+            <option value="phone">Phone</option>
+            <option value="sms">SMS</option>
+            <option value="contact">Contact</option>
+        </select>
+        <p class="type-description" id="typeDescription">Create a QR code from a website URL or plain text.</p>
+    </div>
+
+    <div id="textFields" class="type-fields">
+        <div class="field">
+            <label for="qrText">URL or Text</label>
+            <textarea id="qrText" placeholder="Enter a URL or any text..."></textarea>
+        </div>
+    </div>
+
+    <div id="wifiFields" class="type-fields hidden">
+        <div class="field">
+            <label for="wifiName">Network Name (SSID)</label>
+            <input type="text" id="wifiName" placeholder="Your Wi-Fi name">
+        </div>
+        <div class="field">
+            <label for="wifiPassword">Wi-Fi Password</label>
+            <input type="password" id="wifiPassword" placeholder="Network password">
+        </div>
+        <div class="field">
+            <label for="wifiSecurity">Security Type</label>
+            <select id="wifiSecurity">
+                <option value="WPA">WPA / WPA2 / WPA3</option>
+                <option value="WEP">WEP</option>
+                <option value="nopass">No Password</option>
+            </select>
+        </div>
+    </div>
+
+    <div id="emailFields" class="type-fields hidden">
+        <p class="info-note">Scanning opens your email app with these details filled in. Nothing is sent automatically. Review the recipient and message before sending.</p>
+        <div class="field">
+            <label for="emailAddress">Email Address</label>
+            <input type="email" id="emailAddress" placeholder="example@email.com">
+        </div>
+        <div class="field">
+            <label for="emailSubject">Subject (optional)</label>
+            <input type="text" id="emailSubject" placeholder="Email subject">
+        </div>
+        <div class="field">
+            <label for="emailMessage">Message (optional)</label>
+            <textarea id="emailMessage" placeholder="Write your message..."></textarea>
+        </div>
+    </div>
+
+    <div id="smsFields" class="type-fields hidden">
+        <p class="info-note">Scanning opens a messaging app with the number and optional message filled in. Nothing is sent automatically. Scanner support can vary by phone.</p>
+        <div class="phone-row">
+            <div class="field">
+                <label for="smsPhoneCountry">Country Code</label>
+                <select id="smsPhoneCountry" class="country-select"></select>
+            </div>
+            <div class="field">
+                <label for="smsPhoneNumber">Phone Number</label>
+                <input type="tel" id="smsPhoneNumber" placeholder="9876543210" autocomplete="tel-national">
+            </div>
+        </div>
+        <div class="field custom-code hidden" id="smsCustomCodeField">
+            <label for="smsCustomCountryCode">Custom Country Code</label>
+            <input type="tel" id="smsCustomCountryCode" placeholder="+353">
+        </div>
+        <div class="field">
+            <label for="smsMessage">Message (optional)</label>
+            <textarea id="smsMessage" placeholder="Write your SMS message..."></textarea>
+        </div>
+        <p class="type-description">Creates an SMSTO QR payload. You must review and send the SMS yourself.</p>
+    </div>
+
+    <div id="contactFields" class="type-fields hidden">
+        <p class="info-note">Add the contact details you want to share. Scanning opens a contact preview; the other person chooses whether to save it. Only include information you are comfortable sharing.</p>
+        <div class="field">
+            <label for="contactName">Full Name *</label>
+            <input type="text" id="contactName" placeholder="Your full name" autocomplete="name">
+        </div>
+        <div class="phone-row">
+            <div class="field">
+                <label for="contactPhoneCountry">Country Code</label>
+                <select id="contactPhoneCountry" class="country-select"></select>
+            </div>
+            <div class="field">
+                <label for="contactPhone">Phone Number (optional)</label>
+                <input type="tel" id="contactPhone" placeholder="9876543210" autocomplete="tel-national">
+            </div>
+        </div>
+        <div class="field custom-code hidden" id="contactCustomCodeField">
+            <label for="contactCustomCountryCode">Custom Country Code</label>
+            <input type="tel" id="contactCustomCountryCode" placeholder="+353">
+        </div>
+        <div class="field">
+            <label for="contactEmail">Email (optional)</label>
+            <input type="email" id="contactEmail" placeholder="you@example.com" autocomplete="email">
+        </div>
+        <div class="field">
+            <label for="contactOrg">Organization (optional)</label>
+            <input type="text" id="contactOrg" placeholder="Company or organization">
+        </div>
+        <div class="field">
+            <label for="contactWebsite">Website (optional)</label>
+            <input type="text" id="contactWebsite" placeholder="https://example.com">
+        </div>
+        <div class="field">
+            <label for="contactAddress">Address (optional)</label>
+            <textarea id="contactAddress" placeholder="Street, city, region, postal code, country"></textarea>
+        </div>
+        <p class="type-description">Uses the vCard 3.0 contact format. Some phones may display an import or save-contact screen.</p>
+    </div>
+
+    <div id="phoneFields" class="type-fields hidden">
+        <div class="phone-row">
+            <div class="field">
+                <label for="phoneCountry">Country Code</label>
+                <select id="phoneCountry" class="country-select"></select>
+            </div>
+            <div class="field">
+                <label for="phoneNumber">Phone Number</label>
+                <input type="tel" id="phoneNumber" placeholder="9876543210" autocomplete="tel-national">
+            </div>
+        </div>
+        <div class="field custom-code hidden" id="customCodeField">
+            <label for="customCountryCode">Custom Country Code</label>
+            <input type="tel" id="customCountryCode" placeholder="+353">
+        </div>
+        <p class="type-description">Scanning opens the phone dialer with the number filled in. It does not place a call automatically. Numbers beginning with + use their own country code.</p>
+    </div>
+
+    <div class="two-fields">
+        <div class="field">
+            <label for="qrSize">Preview Size</label>
+            <select id="qrSize">
+                <option value="150">Small — 150px</option>
+                <option value="210" selected>Medium — 210px</option>
+                <option value="300">Large — 300px</option>
+            </select>
+        </div>
+        <div class="field">
+            <label for="frameStyle">Frame Style</label>
+            <select id="frameStyle">
+                <option value="square">Square</option>
+                <option value="rounded">Rounded</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="field">
+        <div class="range-row">
+            <label for="padding">Frame Padding</label>
+            <span class="value" id="paddingValue">18px</span>
+        </div>
+        <input type="range" id="padding" min="10" max="50" value="18">
+    </div>
+
+    <div class="field">
+        <label for="bgColor">Canvas Background</label>
+        <div class="color-row">
+            <input type="color" id="bgColor" value="#202c40">
+            <span class="color-value" id="bgColorValue">#202c40</span>
+        </div>
+    </div>
+
+    <div class="field">
+        <label for="bgImage">Background Image (optional)</label>
+        <input type="file" id="bgImage" class="file-input" accept="image/*">
+        <p class="type-description">Maximum image size: 10 MB.</p>
+    </div>
+
+    <div class="field">
+        <div class="toggle-row">
+            <span>Frame Shadow</span>
+            <input type="checkbox" id="shadow" checked>
+        </div>
+    </div>
+
+    <button class="btn btn-primary generate-btn" id="generateBtn">Generate / Update QR</button>
+    <div class="button-row">
+        <button class="btn btn-secondary" id="resetBtn">Reset</button>
+        <button class="btn btn-secondary" id="removeImageBtn">Remove Image</button>
+    </div>
+</section>
+
+<section class="panel preview-panel">
+    <div class="preview-top" style="margin-bottom:14px">
+        <h2 class="section-title" style="margin:0">Live Preview</h2>
+        <span class="status stale" id="status">Not generated</span>
+    </div>
+
+    <div class="preview-canvas" id="previewCanvas">
+        <div class="frame square stale" id="frame">
+            <div class="qr-white-space">
+                <div id="qrcode"></div>
+            </div>
+            <div class="stale-overlay">Settings changed — regenerate QR</div>
+        </div>
+    </div>
+
+    <p class="preview-hint" id="previewHint">Select a QR type, enter your details and generate.</p>
+    <div class="divider"></div>
+
+    <div class="export-heading">
+        <h3>Export Studio</h3>
+        <span>PNG EXPORT</span>
+    </div>
+
+    <div class="field">
+        <label for="exportSize">Export Resolution</label>
+        <select id="exportSize">
+            <option value="600">600px — Standard</option>
+            <option value="1200" selected>1200px — High Quality</option>
+            <option value="2000">2000px — Ultra Quality</option>
+        </select>
+    </div>
+
+    <div class="export-buttons">
+        <button class="btn btn-primary" id="downloadQR" disabled>QR Only</button>
+        <button class="btn btn-secondary" id="downloadDesign" disabled>Full Design</button>
+    </div>
+    <p class="export-note">QR Only exports the black-and-white QR with a white quiet zone. Full Design includes your selected frame, background and shadow.</p>
+</section>
+</main>
+
+<footer>ForQR v4.8 · Smart QR Types · Made for clean and reliable QR codes</footer>
+</div>
+
+<script>
+"use strict";
+
+const $ = id => document.getElementById(id);
+
+const countryOptions = [
+    ["+91","India (+91)"],["+1","United States / Canada (+1)"],
+    ["+44","United Kingdom (+44)"],["+61","Australia (+61)"],
+    ["+971","UAE (+971)"],["+92","Pakistan (+92)"],
+    ["+880","Bangladesh (+880)"],["+49","Germany (+49)"],
+    ["+33","France (+33)"],["+81","Japan (+81)"],
+    ["+65","Singapore (+65)"],["+64","New Zealand (+64)"],
+    ["+27","South Africa (+27)"],["other","Other / enter code"]
+];
+
+const countrySelects = ["phoneCountry","smsPhoneCountry","contactPhoneCountry"];
+
+countrySelects.forEach(id => {
+    $(id).innerHTML = countryOptions.map(([value,label]) =>
+        `<option value="${value}">${label}</option>`
+    ).join("");
+    $(id).value = "+91";
+});
+
+const qrType = $("qrType");
+const qrSize = $("qrSize");
+const qrContainer = $("qrcode");
+const frame = $("frame");
+const previewCanvas = $("previewCanvas");
+const statusBadge = $("status");
+const previewHint = $("previewHint");
+const generateBtn = $("generateBtn");
+const resetBtn = $("resetBtn");
+const downloadQR = $("downloadQR");
+const downloadDesign = $("downloadDesign");
+
+let qrGenerated = false;
+let qrIsCurrent = false;
+let generatedPayload = "";
+let generatedSize = "";
+let backgroundImage = null;
+let exportBusy = false;
+
+const descriptions = {
+    text:"Create a QR code from a website URL or plain text.",
+    wifi:"Let people connect to a Wi-Fi network by scanning your QR code.",
+    email:"Create a QR code that opens an email draft. Nothing is sent automatically.",
+    phone:"Create a QR code that opens the phone dialer with an international number.",
+    sms:"Create a QR code that opens a messaging app with a number and optional message pre-filled.",
+    contact:"Share contact details in a scannable vCard that compatible phones can import."
+};
+
+function showTypeFields(){
+    const type = qrType.value;
+    ["text","wifi","email","phone","sms","contact"].forEach(name => {
+        $(name+"Fields").classList.toggle("hidden",name!==type);
+    });
+    $("typeDescription").textContent = descriptions[type];
+    updateCustomCodeFields();
+    updateQRStatus();
+}
+
+function updateCustomCodeFields(){
+    $("customCodeField").classList.toggle("hidden",$("phoneCountry").value!=="other");
+    $("smsCustomCodeField").classList.toggle("hidden",$("smsPhoneCountry").value!=="other");
+    $("contactCustomCodeField").classList.toggle("hidden",$("contactPhoneCountry").value!=="other");
+}
+
+function escapeWifiValue(value){
+    return String(value).replace(/([\\;,:"])/g,"\\$1");
+}
+
+function cleanPhone(value){
+    return String(value).trim().replace(/[\s().-]/g,"");
+}
+
+function getInternationalPhone(raw,countrySelect,customCodeInput,label){
+    let number = cleanPhone(raw);
+
+    if(!number) throw new Error(`Please enter a ${label} phone number.`);
+
+    if(number.startsWith("00")){
+        number = "+" + number.slice(2);
+    }else if(!number.startsWith("+")){
+        let code = $(countrySelect).value;
+
+        if(code==="other"){
+            code = cleanPhone($(customCodeInput).value);
+            if(!/^\+[0-9]{1,3}$/.test(code)){
+                throw new Error(`Enter a valid custom country code for ${label}, for example +353.`);
+            }
+        }
+
+        const localDigits = number.replace(/^0+/,"");
+        if(!/^[0-9]{4,14}$/.test(localDigits)){
+            throw new Error(`Please enter a valid ${label} phone number.`);
+        }
+        number = code + localDigits;
+    }
+
+    if(!/^\+[1-9][0-9]{4,14}$/.test(number)){
+        throw new Error(`Please enter a valid international ${label} phone number.`);
+    }
+    return number;
+}
+
+function validEmail(value){
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
+function buildPayload(){
+    const type = qrType.value;
+
+    if(type==="text"){
+        const value = $("qrText").value.trim();
+        if(!value) throw new Error("Please enter a URL or some text.");
+        return value;
+    }
+
+    if(type==="wifi"){
+        const name = $("wifiName").value;
+        const password = $("wifiPassword").value;
+        const security = $("wifiSecurity").value;
+
+        if(!name.trim()) throw new Error("Please enter your Wi-Fi network name.");
+        if(security!=="nopass" && !password) throw new Error("Please enter your Wi-Fi password.");
+
+        return `WIFI:T:${security};S:${escapeWifiValue(name)};P:${security==="nopass"?"":escapeWifiValue(password)};;`;
+    }
+
+    if(type==="email"){
+        const address = $("emailAddress").value.trim();
+        if(!address) throw new Error("Please enter an email address.");
+        if(!validEmail(address)) throw new Error("Please enter a valid email address.");
+
+        const params = new URLSearchParams();
+        if($("emailSubject").value.trim()) params.set("subject",$("emailSubject").value.trim());
+        if($("emailMessage").value.trim()) params.set("body",$("emailMessage").value.trim());
+
+        const query = params.toString();
+        return `mailto:${address}${query?"?"+query:""}`;
+    }
+
+    if(type==="phone"){
+        const number = getInternationalPhone(
+            $("phoneNumber").value,"phoneCountry","customCountryCode","phone"
+        );
+        return `tel:${number}`;
+    }
+
+    if(type==="sms"){
+        const number = getInternationalPhone(
+            $("smsPhoneNumber").value,"smsPhoneCountry","smsCustomCountryCode","SMS"
+        );
+        return `SMSTO:${number}:${$("smsMessage").value}`;
+    }
+
+    if(type==="contact"){
+        const name = $("contactName").value.trim();
+        const phone = $("contactPhone").value.trim();
+        const email = $("contactEmail").value.trim();
+        const org = $("contactOrg").value.trim();
+        const websiteInput = $("contactWebsite").value.trim();
+        const address = $("contactAddress").value.trim();
+
+        if(!name) throw new Error("Please enter the contact's full name.");
+        if(email && !validEmail(email)) throw new Error("Please enter a valid contact email address.");
+
+        let internationalPhone = "";
+        if(phone){
+            internationalPhone = getInternationalPhone(
+                phone,"contactPhoneCountry","contactCustomCountryCode","contact"
+            );
+        }
+
+        let website = websiteInput;
+        if(website){
+            if(!/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(website)) website="https://"+website;
+            try{
+                const parsed = new URL(website);
+                if(!["http:","https:"].includes(parsed.protocol) || !parsed.hostname) throw new Error();
+            }catch(error){
+                throw new Error("Please enter a valid website URL.");
+            }
+        }
+
+        const esc = value => String(value)
+            .replace(/\\/g,"\\\\")
+            .replace(/\r\n|\r|\n/g,"\\n")
+            .replace(/,/g,"\\,")
+            .replace(/;/g,"\\;");
+
+        const lines = [
+            "BEGIN:VCARD",
+            "VERSION:3.0",
+            `FN:${esc(name)}`,
+            `N:${esc(name)};;;;`
+        ];
+        if(internationalPhone) lines.push(`TEL;TYPE=CELL:${esc(internationalPhone)}`);
+        if(email) lines.push(`EMAIL;TYPE=INTERNET:${esc(email)}`);
+        if(org) lines.push(`ORG:${esc(org)}`);
+        if(website) lines.push(`URL:${esc(website)}`);
+        if(address) lines.push(`ADR;TYPE=WORK:;;${esc(address)};;;;`);
+        lines.push("END:VCARD");
+        return lines.join("\r\n");
+    }
+
+    throw new Error("Please select a valid QR type.");
+}
+
+function updateQRStatus(){
+    if(!qrGenerated){
+        qrIsCurrent = false;
+        statusBadge.textContent = "Not generated";
+        statusBadge.classList.add("stale");
+        frame.classList.add("stale");
+        downloadQR.disabled = true;
+        downloadDesign.disabled = true;
+        return;
+    }
+
+    let currentPayload = "";
+    try{currentPayload=buildPayload();}catch(error){currentPayload="";}
+
+    qrIsCurrent =
+        currentPayload===generatedPayload &&
+        qrSize.value===generatedSize &&
+        currentPayload.length>0;
+
+    statusBadge.textContent = qrIsCurrent ? "Ready" : "Update needed";
+    statusBadge.classList.toggle("stale",!qrIsCurrent);
+    frame.classList.toggle("stale",!qrIsCurrent);
+    downloadQR.disabled = !qrIsCurrent || exportBusy;
+    downloadDesign.disabled = !qrIsCurrent || exportBusy;
+    previewHint.textContent = qrIsCurrent
+        ? "QR code is up to date. Ready to export."
+        : "Your QR details changed. Generate again before exporting.";
+}
+
+function updateDesign(){
+    $("paddingValue").textContent = $("padding").value+"px";
+    frame.className = "frame "+$("frameStyle").value;
+    frame.style.padding = $("padding").value+"px";
+    frame.style.boxShadow = $("shadow").checked
+        ? "0 12px 35px rgba(0,0,0,.28)" : "none";
+    previewCanvas.style.backgroundColor = $("bgColor").value;
+    $("bgColorValue").textContent = $("bgColor").value;
+    previewCanvas.style.backgroundImage = backgroundImage
+        ? `url("${backgroundImage}")` : "none";
+}
+
+function generateQR(){
+    let payload;
+    try{payload=buildPayload();}
+    catch(error){alert(error.message);return;}
+
+    if(typeof QRCode==="undefined"){
+        alert("QR library could not load. Check your internet connection and reload.");
+        return;
+    }
+
+    qrContainer.innerHTML="";
+    try{
+        new QRCode(qrContainer,{
+            text:payload,
+            width:Number(qrSize.value),
+            height:Number(qrSize.value),
+            colorDark:"#000000",
+            colorLight:"#ffffff",
+            correctLevel:QRCode.CorrectLevel.H
+        });
+    }catch(error){
+        alert("Could not generate this QR code. Please check the entered information.");
+        return;
+    }
+
+    generatedPayload=payload;
+    generatedSize=qrSize.value;
+    qrGenerated=true;
+    updateDesign();
+    updateQRStatus();
+    previewHint.textContent="QR code generated successfully.";
+
+    if(window.innerWidth<=760){
+        document.querySelector(".preview-panel").scrollIntoView({behavior:"smooth",block:"start"});
+    }
+}
+
+function createExportQR(payload,size){
+    return new Promise((resolve,reject)=>{
+        if(typeof QRCode==="undefined"){
+            reject(new Error("QR library is not available."));
+            return;
+        }
+
+        const temporary=document.createElement("div");
+        temporary.style.cssText=`position:fixed;left:-10000px;top:0;width:${size}px;height:${size}px;background:#fff`;
+        document.body.appendChild(temporary);
+
+        try{
+            new QRCode(temporary,{
+                text:payload,width:size,height:size,
+                colorDark:"#000000",colorLight:"#ffffff",
+                correctLevel:QRCode.CorrectLevel.H
+            });
+        }catch(error){
+            temporary.remove();
+            reject(error);
+            return;
+        }
+
+        let attempts=0;
+        const check=()=>{
+            const canvas=temporary.querySelector("canvas");
+            if(canvas && canvas.width>0){
+                try{resolve(canvas.toDataURL("image/png"));}
+                catch(error){reject(error);}
+                temporary.remove();
+                return;
+            }
+
+            const image=temporary.querySelector("img");
+            if(image && image.complete && image.naturalWidth>0){
+                const copy=document.createElement("canvas");
+                copy.width=size;copy.height=size;
+                const context=copy.getContext("2d");
+                context.fillStyle="#fff";
+                context.fillRect(0,0,size,size);
+                context.drawImage(image,0,0,size,size);
+                try{resolve(copy.toDataURL("image/png"));}
+                catch(error){reject(error);}
+                temporary.remove();
+                return;
+            }
+
+            if(++attempts>=80){
+                temporary.remove();
+                reject(new Error("QR image could not be generated."));
+                return;
+            }
+            requestAnimationFrame(check);
+        };
+        check();
+    });
+}
+
+function loadImage(source){
+    return new Promise((resolve,reject)=>{
+        const image=new Image();
+        image.onload=()=>resolve(image);
+        image.onerror=()=>reject(new Error("Image could not be loaded."));
+        image.src=source;
+    });
+}
+
+function drawCover(context,image,x,y,width,height){
+    const scale=Math.max(width/image.width,height/image.height);
+    const w=image.width*scale,h=image.height*scale;
+    context.drawImage(image,x+(width-w)/2,y+(height-h)/2,w,h);
+}
+
+function roundedRect(context,x,y,width,height,radius){
+    const r=Math.min(radius,width/2,height/2);
+    context.beginPath();
+    context.moveTo(x+r,y);
+    context.lineTo(x+width-r,y);
+    context.quadraticCurveTo(x+width,y,x+width,y+r);
+    context.lineTo(x+width,y+height-r);
+    context.quadraticCurveTo(x+width,y+height,x+width-r,y+height);
+    context.lineTo(x+r,y+height);
+    context.quadraticCurveTo(x,y+height,x,y+height-r);
+    context.lineTo(x,y+r);
+    context.quadraticCurveTo(x,y,x+r,y);
+    context.closePath();
+}
+
+function downloadCanvas(canvas,filename){
+    const link=document.createElement("a");
+    link.download=filename;
+    link.href=canvas.toDataURL("image/png");
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+}
+
+function setExportBusy(value){
+    exportBusy=value;
+    downloadQR.textContent=value ? "Preparing..." : "QR Only";
+    downloadDesign.textContent=value ? "Preparing..." : "Full Design";
+    updateQRStatus();
+}
+
+async function exportQROnly(){
+    if(!qrIsCurrent || exportBusy) return;
+    setExportBusy(true);
+
+    try{
+        const resolution=Number($("exportSize").value);
+        const data=await createExportQR(generatedPayload,resolution);
+        const image=await loadImage(data);
+        const margin=Math.max(24,Math.round(resolution*.08));
+        const canvas=document.createElement("canvas");
+        canvas.width=resolution+margin*2;
+        canvas.height=resolution+margin*2;
+        const context=canvas.getContext("2d");
+        context.fillStyle="#fff";
+        context.fillRect(0,0,canvas.width,canvas.height);
+        context.drawImage(image,margin,margin,resolution,resolution);
+        downloadCanvas(canvas,`ForQR-QR-${resolution}px.png`);
+    }catch(error){
+        console.error(error);
+        alert("QR export failed. Please try again.");
+    }finally{setExportBusy(false);}
+}
+
+async function exportFullDesign(){
+    if(!qrIsCurrent || exportBusy) return;
+    setExportBusy(true);
+
+    try{
+        const resolution=Number($("exportSize").value);
+        const data=await createExportQR(generatedPayload,resolution);
+        const qrImage=await loadImage(data);
+
+        const quietZone=Math.max(16,Math.round(resolution*.035));
+        const cardSize=resolution+quietZone*2;
+        const canvasWidth=Math.round(resolution*1.35);
+        const canvasHeight=Math.round(resolution*1.55);
+        const cardX=Math.round((canvasWidth-cardSize)/2);
+        const cardY=Math.round((canvasHeight-cardSize)/2);
+
+        const canvas=document.createElement("canvas");
+        canvas.width=canvasWidth;
+        canvas.height=canvasHeight;
+        const context=canvas.getContext("2d");
+
+        context.fillStyle=$("bgColor").value;
+        context.fillRect(0,0,canvasWidth,canvasHeight);
+
+        if(backgroundImage){
+            const background=await loadImage(backgroundImage);
+            drawCover(context,background,0,0,canvasWidth,canvasHeight);
+        }
+
+        if($("shadow").checked){
+            context.save();
+            context.shadowColor="rgba(0,0,0,.30)";
+            context.shadowBlur=Math.round(resolution*.045);
+            context.shadowOffsetY=Math.round(resolution*.025);
+        }
+
+        context.fillStyle="#fff";
+        if($("frameStyle").value==="rounded"){
+            roundedRect(context,cardX,cardY,cardSize,cardSize,Math.round(resolution*.08));
+            context.fill();
+        }else{
+            context.fillRect(cardX,cardY,cardSize,cardSize);
+        }
+        if($("shadow").checked) context.restore();
+
+        context.fillStyle="#fff";
+        context.fillRect(cardX+quietZone,cardY+quietZone,resolution,resolution);
+        context.drawImage(qrImage,cardX+quietZone,cardY+quietZone,resolution,resolution);
+
+        downloadCanvas(canvas,`ForQR-Design-${resolution}px.png`);
+    }catch(error){
+        console.error(error);
+        alert("Full Design export failed. Please try again.");
+    }finally{setExportBusy(false);}
+}
+
+/* Content and validation listeners */
+qrType.addEventListener("change",showTypeFields);
+
+countrySelects.forEach(id=>{
+    $(id).addEventListener("change",()=>{
+        updateCustomCodeFields();
+        updateQRStatus();
+    });
+});
+
+const contentInputs=[
+    "qrText","wifiName","wifiPassword","wifiSecurity",
+    "emailAddress","emailSubject","emailMessage",
+    "phoneNumber","customCountryCode",
+    "smsPhoneNumber","smsCustomCountryCode","smsMessage",
+    "contactName","contactPhone","contactCustomCountryCode",
+    "contactEmail","contactOrg","contactWebsite","contactAddress"
+];
+
+contentInputs.forEach(id=>{
+    $(id).addEventListener("input",updateQRStatus);
+    $(id).addEventListener("change",updateQRStatus);
+});
+
+qrSize.addEventListener("change",updateQRStatus);
+
+/* Design listeners */
+$("frameStyle").addEventListener("change",updateDesign);
+$("padding").addEventListener("input",updateDesign);
+$("bgColor").addEventListener("input",updateDesign);
+$("shadow").addEventListener("change",updateDesign);
+
+$("bgImage").addEventListener("change",()=>{
+    const file=$("bgImage").files[0];
+    if(!file) return;
+
+    if(!file.type.startsWith("image/")){
+        alert("Please select a valid image.");
+        $("bgImage").value="";
+        return;
+    }
+    if(file.size>10*1024*1024){
+        alert("Image is too large. Please select an image smaller than 10 MB.");
+        $("bgImage").value="";
+        return;
+    }
+
+    const reader=new FileReader();
+    reader.onload=event=>{
+        backgroundImage=event.target.result;
+        updateDesign();
+    };
+    reader.onerror=()=>{
+        alert("Could not read this image.");
+        $("bgImage").value="";
+    };
+    reader.readAsDataURL(file);
+});
+
+$("removeImageBtn").addEventListener("click",()=>{
+    backgroundImage=null;
+    $("bgImage").value="";
+    updateDesign();
+});
+
+generateBtn.addEventListener("click",generateQR);
+downloadQR.addEventListener("click",exportQROnly);
+downloadDesign.addEventListener("click",exportFullDesign);
+
+resetBtn.addEventListener("click",()=>{
+    const resetValues={
+        qrType:"text",qrText:"",wifiName:"",wifiPassword:"",
+        wifiSecurity:"WPA",emailAddress:"",emailSubject:"",
+        emailMessage:"",smsPhoneNumber:"",smsMessage:"",
+        phoneNumber:"",contactName:"",contactPhone:"",
+        contactEmail:"",contactOrg:"",contactWebsite:"",
+        contactAddress:"",customCountryCode:"",
+        smsCustomCountryCode:"",contactCustomCountryCode:"",
+        qrSize:"210",frameStyle:"square",padding:"18",
+        bgColor:"#202c40",exportSize:"1200"
+    };
+
+    Object.entries(resetValues).forEach(([id,value])=>$(id).value=value);
+    countrySelects.forEach(id=>$(id).value="+91");
+
+    $("bgImage").value="";
+    $("shadow").checked=true;
+    backgroundImage=null;
+    qrGenerated=false;
+    qrIsCurrent=false;
+    generatedPayload="";
+    generatedSize="";
+    qrContainer.innerHTML="";
+
+    showTypeFields();
+    updateCustomCodeFields();
+    updateDesign();
+    updateQRStatus();
+    previewHint.textContent="Select a QR type, enter your details and generate.";
+});
+
+/* Initial setup */
+showTypeFields();
+updateCustomCodeFields();
+updateDesign();
+updateQRStatus();
+</script>
+</body>
+</html>
